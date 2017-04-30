@@ -46,7 +46,8 @@ def post():
     if request.method == 'POST':
         # リクエストフォームから「名前」を取得して
         name = request.form['name']
-        #if not db.session.query(User).filter(User.username == name).count():
+        if not db.session.query(User).filter(User.username == name).count():
+            print("1")
         #    reg = User(name)
         #    db.session.add(reg)
         #    db.session.commit()
