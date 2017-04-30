@@ -45,9 +45,9 @@ def post():
     title = "こんにちは"
     if request.method == 'POST':
         # リクエストフォームから「名前」を取得して
-        name = request.form['name']
-        if not db.session.query(User).filter(User.username == name).count():
-            reg = User(name)
+        username = request.form['name']
+        if not db.session.query(User).filter(User.username == username).count():
+            reg = User(username)
             db.session.add(reg)
             db.session.commit()
         # index.html をレンダリングする
