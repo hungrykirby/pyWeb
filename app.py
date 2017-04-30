@@ -2,9 +2,22 @@
 from flask import Flask, render_template, request, redirect, url_for
 import numpy as np
 import os
+from flask.ext.sqlalchemy import SQLAlchemy
+
 
 # 自身の名称を app という名前でインスタンス化する
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True)
+    def __init__(self, username, email):
+        self.username = username
+
+    def __repr__(self):
+        return '<User %r>' % self.username
 
 # メッセージをランダムに表示するメソッド
 def picked_up():
@@ -33,6 +46,10 @@ def post():
     if request.method == 'POST':
         # リクエストフォームから「名前」を取得して
         name = request.form['name']
+        if not db.session.query(User).filter(User.name == name).count():
+            reg = User(name)
+            db.session.add(reg)
+            db.session.commit()
         # index.html をレンダリングする
         return render_template('index.html',
                                name=name, title=title)

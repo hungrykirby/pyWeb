@@ -3,3 +3,5 @@ numpy==1.11.3
 Flask==0.12
 Jinja2
 pip
+flask-sqlalchemy
+psycopg2
