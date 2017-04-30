@@ -13,7 +13,7 @@ db = SQLAlchemy(app)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True)
-    def __init__(self, username, email):
+    def __init__(self, username):
         self.username = username
 
     def __repr__(self):
@@ -46,7 +46,7 @@ def post():
     if request.method == 'POST':
         # リクエストフォームから「名前」を取得して
         name = request.form['name']
-        if not db.session.query(User).filter(User.name == name).count():
+        if not db.session.query(User).filter(User.username == name).count():
             reg = User(name)
             db.session.add(reg)
             db.session.commit()
