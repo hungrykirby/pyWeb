@@ -6,4 +6,4 @@ pip
 flask-sqlalchemy
 psycopg2
 SQLAlchemy
-MySQLdb
+mysql-python
