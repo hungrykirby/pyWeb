@@ -1,34 +1,21 @@
-import os
-
-from flask_sqlalchemy import SQLAlchemy
-
-from datetime import datetime
-import time
-
 from flask import Flask, render_template, request, redirect, url_for
 import numpy as np
+import os
+from flask.ext.sqlalchemy import SQLAlchemy
+import MySQLdb
+
+conn = MySQLdb.connect(
+        user='katsuki',
+        passwd='8Lapis6Luna',
+        host='localhost',
+        db='k_testdb',
+        port=3306
+    )
+c = conn.cursor()
+sql = 'create table names (name varchar(32))'
+#c.execute(sql)
 
 app = Flask(__name__)
-db_path = os.path.join(os.path.dirname(__file__), 'test2.db')
-db_uri = 'sqlite:///{}'.format(db_path)
-#app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-#app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-db = SQLAlchemy(app)
-
-class User(db.Model):
-    __tablename__ = 'entries'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80))
-    date = db.Column(db.DateTime)
-
-    def __init__(self, name, datetime):
-        self.name = name
-        self.date = datetime
-
-    def __repr__(self):
-        return '<Name %r>' % self.name
 
 def picked_up():
     messages = [
@@ -50,9 +37,9 @@ def post():
     title = "こんにちは"
     if request.method == 'POST':
         name = request.form['name']
-        user = User(name, datetime.now())
-        db.session.add(user)
-        db.session.commit()
+        sql = 'insert into names values (%s)'
+        c.execute(sql, (name,))
+        conn.commit()
         return render_template('index.html',
                                name=name, title=title)
     else:
@@ -60,10 +47,10 @@ def post():
 
 @app.route('/look')
 def look():
-    users = db.session.query(User).all()
-    for user in users:
-        print(user)
-    print("from id", db.session.query(User).get(1))
+    sql = 'select * from names'
+    c.execute(sql)
+    for row in c.fetchall():
+        print('Name:', row[0])
     return 'datas'
 
 if __name__ == '__main__':
