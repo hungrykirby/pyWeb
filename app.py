@@ -64,7 +64,7 @@ def look():
     for user in users:
         print(user)
     print("from id", db.session.query(User).get(1))
-    return 'datas'
+    return str(users)
 
 if __name__ == '__main__':
     #app.debug = True # デバッグモード有効化
