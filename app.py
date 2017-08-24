@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 from flask import Flask, render_template, request, redirect, url_for
-import numpy as np
+#import tables
 
 app = Flask(__name__)
 db_path = os.path.join(os.path.dirname(__file__), 'test2.db')
@@ -17,13 +17,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 db = SQLAlchemy(app)
 
 class User(db.Model):
-    __tablename__ = 'entries'
+    __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80))
     date = db.Column(db.DateTime)
 
-    comment = db.relationship("UserComment", backref='user', lazy='dynamic')
+    comment = db.relationship("Message", backref='user', lazy='dynamic')
 
 
     def __init__(self, name, datetime):
@@ -33,17 +33,14 @@ class User(db.Model):
     def __repr__(self):
         return '<Name %r>' % self.name
 
-    def add_comment(self, comment):
-        self.comment = comment
-
-class UserComment(db.Model):
-    __tablename__='comments'
+class Message(db.Model):
+    __tablename__='message'
 
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.Text)
     date = db.Column(db.DateTime)
 
-    comment_id = db.Column(db.Integer, db.ForeignKey('entries.id'))
+    comment_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     def __init__(self, comment, date, e_id):
         self.comment = comment
@@ -53,28 +50,20 @@ class UserComment(db.Model):
     def __repr__(self):
         return '<comment %r>' % self.comment
 
-def picked_up():
-    messages = [
-        "こんにちは、あなたの名前を入力してください",
-        "やあ！お名前は何ですか？",
-        "あなたの名前を教えてね"
-    ]
-    return np.random.choice(messages)
 
 @app.route('/')
 def index():
     title = "ようこそ"
-    message = picked_up()
+    message = "データベースに追加するidとmessageを教えてね"
     return render_template('index.html',
                            message=message, title=title)
 
 @app.route('/post', methods=['GET', 'POST'])
 def post():
-    title = "こんにちは"
+    title = "名前を追加します"
     if request.method == 'POST':
         name = request.form['name']
         user = User(name, datetime.now())
-        print(user.date)
         db.session.add(user)
         db.session.commit()
         return render_template('post.html',
@@ -82,53 +71,41 @@ def post():
     else:
         return redirect(url_for('index'))
 
-@app.route('/comment', methods=['GET', 'POST'])
+@app.route('/message', methods=['GET', 'POST'])
 def comment():
-    title = "Yeah"
+    title = "メッセージを投稿するページです"
     if request.method == 'POST':
-        user = db.session.query(User).filter_by(name='aho').first()
-        comment = request.form['comment']
-        print(user.id)
-        uComment = UserComment(comment, datetime.now(), user.id)
-        print(uComment.comment_id)
-        #user.add_comment(uComment)
-        db.session.add(uComment)
-        #user.comment = uComment
-        #db.session.flush()
+        message_content = request.form['message']
+        my_id = request.form['id']
+        user = db.session.query(User).filter_by(id=my_id).first()
+        if user != None and user != []:
+            message = Message(message_content, datetime.now(), user.id)
+            db.session.add(message)
+            print("finish adding")
+            #return "finish adding"
+        else:
+            print("No add")
+            #return "No add"
         db.session.commit()
-        return "+++"
+        return redirect(url_for('index'))
     else:
         return redirect(url_for('index'))
-
-@app.route('/add/<comment>')
-def add(comment):
-    user = db.session.query(User).filter_by(name='aho').first()
-    print(user.id)
-    uComment = UserComment(comment, datetime.now(), user.id)
-    print(uComment.comment_id)
-    db.session.add(uComment)
-    db.session.commit()
-    return comment
-
 
 @app.route('/look')
 def look():
     users = db.session.query(User).all()
     for user in users:
-        print(user.id, user.name, user.date, user.comment.count())
-        for comment in user.comment:
-            print(comment.id, comment.date, comment.comment)
-    user_comments = db.session.query(UserComment).all()
-    for user_comment in user_comments:
-        print(user_comment.id, user_comment.comment, user_comment.date)
-    print("user", users)
-    return "look"
+        print(user.id, user.name, user.date)
+        #print(user.__dict__["name"])
+        #for m in user.comment:
+        #    print(m.id, m.date, m.comment)
+    ms = db.session.query(Message).all()
+    print("ms", ms)
+    for m in ms:
+        print(m.id, m.comment, m.date)
+    return "ユーザとメッセージを確認できます"
 
-@app.route('/<num>')
-def l(num):
-    return str(num)
-
-@app.route("/d")
+@app.route("/delete")
 def delete_db_all():
     users = db.session.query(User).all()
     user_id_arr = []
@@ -137,11 +114,10 @@ def delete_db_all():
         user_id_arr.append(user.name)
         db.session.delete(user)
         db.session.commit()
-    user_comments = db.session.query(UserComment).all()
-    print("---", len(user_comments), "---")
-    for user_comment in user_comments:
-        user_id_arr.append(user_comment.comment)
-        db.session.delete(user_comment)
+    message = db.session.query(Message).all()
+    print("---", len(message), "---")
+    for m in message:
+        db.session.delete(m)
         db.session.commit()
     return ",".join(user_id_arr)
 
